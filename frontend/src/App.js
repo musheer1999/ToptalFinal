@@ -31,11 +31,13 @@ import {
   CustomerOrdersPage,
   OrderDetailPage,
 } from './pages/customer';
-import { OwnerOrdersPage }       from './pages/owner/OwnerOrdersPage';
-import { ManageRestaurantsPage } from './pages/owner/ManageRestaurantsPage';
-import { ManageMealsPage }       from './pages/owner/ManageMealsPage';
-import { ManageCouponsPage }     from './pages/owner/ManageCouponsPage';
-import { ManageUsersPage }       from './pages/owner/ManageUsersPage';
+import {
+  OwnerOrdersPage,
+  ManageMealsPage,
+  ManageUsersPage,
+  ManageCouponsPage,
+  ManageRestaurantsPage,
+} from './pages/owner';
 
 // ── PROTECTED ROUTE HELPERS ─────────────────────────────────────
 // These check if the user is logged in / has the right role before

@@ -1,19 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { useStore } from '../../context/StoreContext';
-import { Button, EmptyState, Banner } from '../../components/ui';
-import { PageShell, PageHeader, OwnerRestaurantGate, OwnerRestaurantHeader, RestaurantEditModal } from './_shared';
+import React, { useEffect } from 'react';
+import { Banner, Button, EmptyState } from '../../../components/ui';
+import { OwnerRestaurantGate, OwnerRestaurantHeader, PageHeader, PageShell, RestaurantEditModal } from '../_shared';
+import useManageUsers from './useManageUsers';
+import useManageUsersQuery from './useManageUsersQuery';
 
 function ManageUsersInner() {
-  const { ownerRestaurant, loadUsers, users, blockUser, unblockUser, showToast } = useStore();
-  const r = ownerRestaurant;
-  const [loading, setLoading]         = useState(true);
-  const [editingRest, setEditingRest] = useState(false);
+  const {
+    loading,
+    customers,
+    editingRest,
+    ownerRestaurant,
+    setLoading,
+    notifyError,
+    notifySuccess,
+    setEditingRest,
+    onUsersLoaded,
+    updateBlockedStatus,
+  } = useManageUsers();
+  const { loadUsers, blockUser, unblockUser } = useManageUsersQuery();
 
-  useEffect(() => { loadUsers().catch(() => {}).finally(() => setLoading(false)); /* eslint-disable-next-line */ }, []);
+  useEffect(() => {
+    loadUsers().then(onUsersLoaded).catch(() => {}).finally(() => setLoading(false));
+  }, [loadUsers, onUsersLoaded, setLoading]);
 
   if (loading) return <PageShell><div style={{ textAlign: 'center', padding: 60, color: '#718096' }}>Loading users...</div></PageShell>;
-
-  const customers = users.filter(u => u.role === 'customer');
 
   return (
     <PageShell>
@@ -22,12 +32,11 @@ function ManageUsersInner() {
       <div style={{ marginBottom: 14 }}>
         <Banner tone="warning">⚠️ Blocking a user prevents them from placing orders at your restaurant.</Banner>
       </div>
-
       {customers.length === 0 ? (
         <EmptyState icon="👥" title="No customers yet" body="Customers who order from you will appear here." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {customers.map(user => {
+          {customers.map((user) => {
             const blocked = user.is_blocked;
             return (
               <div key={user.id} style={{ background: 'white', border: '1px solid #EDF0F5', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}>
@@ -39,15 +48,23 @@ function ManageUsersInner() {
                   <div style={{ marginTop: 4 }}>
                     {blocked
                       ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: '#FEE7E7', color: '#9B2C2C', fontSize: 11, fontWeight: 600 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: '#E53E3E' }} />Blocked</span>
-                      : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: '#E6F7EC', color: '#22543D', fontSize: 11, fontWeight: 600 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: '#38A169' }} />Active</span>
-                    }
+                      : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: '#E6F7EC', color: '#22543D', fontSize: 11, fontWeight: 600 }}><span style={{ width: 5, height: 5, borderRadius: 999, background: '#38A169' }} />Active</span>}
                   </div>
                 </div>
                 <Button size="sm" variant={blocked ? 'success' : 'danger'} onClick={async () => {
                   try {
-                    if (blocked) { await unblockUser(user.id, r.id); showToast({ kind: 'success', title: `Unblocked ${user.email}` }); }
-                    else         { await blockUser(user.id, r.id);   showToast({ kind: 'error',   title: `Blocked ${user.email}` }); }
-                  } catch (err) { showToast({ kind: 'error', title: err.message }); }
+                    if (blocked) {
+                      await unblockUser(user.id, ownerRestaurant.id);
+                      updateBlockedStatus(user.id, false);
+                      notifySuccess(`Unblocked ${user.email}`);
+                    } else {
+                      await blockUser(user.id, ownerRestaurant.id);
+                      updateBlockedStatus(user.id, true);
+                      notifyError(`Blocked ${user.email}`);
+                    }
+                  } catch (err) {
+                    notifyError(err.message);
+                  }
                 }}>
                   {blocked ? 'Unblock' : 'Block'}
                 </Button>
@@ -56,7 +73,7 @@ function ManageUsersInner() {
           })}
         </div>
       )}
-      {editingRest && <RestaurantEditModal restaurant={r} onClose={() => setEditingRest(false)} />}
+      {editingRest && <RestaurantEditModal restaurant={ownerRestaurant} onClose={() => setEditingRest(false)} />}
     </PageShell>
   );
 }
