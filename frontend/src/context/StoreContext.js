@@ -80,6 +80,7 @@ export function StoreProvider({ children }) {
   // ── DATA STATE ───────────────────────────────────────────────
   // These hold data fetched from the backend
   const [restaurants, setRestaurants] = useState([]);
+  const [restaurantsLoaded, setRestaurantsLoaded] = useState(false);
   const [meals, setMeals] = useState([]); // meals for current restaurant view
   const [coupons, setCoupons] = useState([]); // coupons for current restaurant
   const [users, setUsers] = useState([]); // customers (owner view)
@@ -96,6 +97,7 @@ export function StoreProvider({ children }) {
     } else {
       // Clear data when logged out
       setRestaurants([]);
+      setRestaurantsLoaded(false);
       setMeals([]);
       setOrders([]);
     }
@@ -153,10 +155,13 @@ export function StoreProvider({ children }) {
   // Load all restaurants (used on Browse Restaurants page)
   const loadRestaurants = useCallback(async () => {
     try {
+      setRestaurantsLoaded(false);
       const data = await apiCall('GET', '/restaurants');
       setRestaurants(data.restaurants);
     } catch (err) {
       console.error('Failed to load restaurants:', err.message);
+    } finally {
+      setRestaurantsLoaded(true);
     }
   }, []);
 
@@ -376,6 +381,7 @@ export function StoreProvider({ children }) {
 
     // ── Restaurants ───────────────────────────────────────────
     restaurants,
+    restaurantsLoaded,
     loadRestaurants,
     getRestaurant,
     createRestaurant,

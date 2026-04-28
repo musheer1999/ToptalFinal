@@ -36,8 +36,8 @@ export function PageHeader({ title, subtitle }) {
 }
 
 export function OwnerRestaurantGate({ children }) {
-  const { ownerRestaurant, restaurants } = useStore();
-  if (restaurants.length === 0) {
+  const { ownerRestaurant, restaurantsLoaded } = useStore();
+  if (!restaurantsLoaded) {
     return (
       <PageShell>
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#718096' }}>
