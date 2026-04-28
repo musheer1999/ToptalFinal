@@ -90,6 +90,19 @@ export function StoreProvider({ children }) {
   // ── TOAST (NOTIFICATION) STATE ───────────────────────────────
   const [toasts, setToasts] = useState([]);
 
+  // ── SESSION VALIDATION ON STARTUP ───────────────────────────
+  // When the app loads, verify the session is still valid by hitting
+  // /api/auth/me. If the httpOnly cookie is missing or expired the
+  // backend returns 401 and we clear the stale localStorage session.
+  useEffect(() => {
+    if (!session) return;
+    apiCall('GET', '/auth/me').catch(() => {
+      localStorage.removeItem('fd_user');
+      setSession(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── BACKEND HEALTH CHECK ─────────────────────────────────────
   // Polls /api/health every 30s. No auth required on that endpoint.
   // Polling means the banner auto-clears once the backend comes up,
