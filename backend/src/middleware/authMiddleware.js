@@ -12,16 +12,15 @@ const { verifyToken } = require('../utils/jwt');
 
 function authMiddleware(req, res, next) {
   try {
-    // ─── STEP 1: Get the token from request headers ─────────
-    // Frontend sends token like: "Authorization: Bearer eyJhbGc..."
-    // We split by space to get just the token part
-    const authHeader = req.headers.authorization;
+    // ─── STEP 1: Get the token from the httpOnly cookie ─────
+    // The browser automatically sends this cookie with every request.
+    // Because it is httpOnly, JavaScript on the page cannot read it,
+    // which prevents XSS attacks from stealing the token.
+    const token = req.cookies.fd_token;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token) {
       return res.status(401).json({ error: 'No token provided. Please login.' });
     }
-
-    const token = authHeader.split(' ')[1]; // Get the part after "Bearer "
 
     // ─── STEP 2: Verify the token ───────────────────────────
     // If invalid/expired → this throws an error
@@ -33,7 +32,6 @@ function authMiddleware(req, res, next) {
     req.user = decoded;
 
     // ─── STEP 4: Continue to the next function ──────────────
-    // next() = "this middleware is done, move on"
     next();
 
   } catch (error) {

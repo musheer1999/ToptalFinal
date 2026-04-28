@@ -7,6 +7,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const http = require('http');          // Node.js built-in HTTP module
 const { Server } = require('socket.io'); // Socket.io for real-time notifications
 require('dotenv').config();
@@ -57,7 +58,8 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // ─── MIDDLEWARE ──────────────────────────────────────────────
-app.use(cors());
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 
 // ─── TEST ROUTE ──────────────────────────────────────────────

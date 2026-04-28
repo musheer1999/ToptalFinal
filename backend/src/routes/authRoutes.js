@@ -10,7 +10,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import our controller functions
-const { register, login, getMe } = require('../controllers/authController');
+const { register, login, logout, getMe } = require('../controllers/authController');
 
 // Import auth middleware (to protect /me route)
 const { authMiddleware } = require('../middleware/authMiddleware');
@@ -29,6 +29,9 @@ router.post('/login', login);
 // Protected route — only logged-in users can access
 // authMiddleware runs first, then getMe
 router.get('/me', authMiddleware, getMe);
+
+// POST /api/auth/logout — Clear the auth cookie
+router.post('/logout', logout);
 
 // Export the router so server.js can use it
 module.exports = router;
