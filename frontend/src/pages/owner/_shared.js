@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavBar from '../../components/NavBar';
+import NavBar from '../../components/ui/NavBar';
 import { Button, Card, Field, Input, Textarea, Select, Modal } from '../../components/ui';
 import { useStore } from '../../context/StoreContext';
 import { CUISINES } from '../../data/seedData';

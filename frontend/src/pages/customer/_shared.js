@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavBar from '../../components/NavBar';
+import NavBar from '../../components/ui/NavBar';
 import { fmtDateFull } from '../../components/ui';
 
 export function PageShell({ children }) {

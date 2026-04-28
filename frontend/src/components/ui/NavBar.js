@@ -11,9 +11,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useStore } from '../context/StoreContext';
-import { useCartContext } from '../context/CartContext';
-import { fmtMoney, QtyStepper, Button } from './ui';
+import { useStore } from '../../context/StoreContext';
+import { useCartContext } from '../../context/CartContext';
+import { fmtMoney, QtyStepper, Button } from '.';
 
 // ── LOGO ──────────────────────────────────────────────────────
 function Logo() {
@@ -25,12 +25,9 @@ function Logo() {
       onClick={() => navigate(home)}
       style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flexShrink: 0 }}
     >
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}>
-        <rect width="28" height="28" rx="8" fill="#FF6B35" />
-        <path d="M8 10h12M8 14h12M8 18h7" stroke="white" strokeWidth="2" strokeLinecap="round" />
-        <circle cx="20" cy="18" r="2.5" fill="white" />
-      </svg>
+      <img src="/logo.png" alt="logo" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
       {/* Text hidden below 380px */}
+      
       <span
         style={{
           fontSize: 15,
@@ -41,8 +38,10 @@ function Logo() {
         }}
         className="logo-text"
       >
-        Mealroute
+        ToptalMeals
       </span>
+
+     
     </div>
   );
 }

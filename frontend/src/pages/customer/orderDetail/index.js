@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, EmptyState, StatusBadge, fmtMoney } from '../../../components/ui';
 import { PageShell, PageHeader, SummaryRow, Timeline } from '../_shared';
+import { useStore } from '../../../context/StoreContext';
 import useOrderDetail from './useOrderDetail';
 import useOrderDetailQuery from './useOrderDetailQuery';
 
@@ -18,6 +19,8 @@ export function OrderDetailPage() {
     notifySuccess,
     notifyError,
   } = useOrderDetail();
+  const { session } = useStore();
+  const isCustomer = session?.role === 'customer';
   const { loadOrderById, cancelOrder, markReceived, reorder } = useOrderDetailQuery({
     onAfterLoadOrder,
   });
@@ -110,7 +113,7 @@ export function OrderDetailPage() {
                 Cancel order
               </Button>
             )}
-            {order.status === 'Delivered' && (
+            {isCustomer && order.status === 'Delivered' && (
               <Button
                 variant="success"
                 onClick={async () => {
@@ -126,20 +129,22 @@ export function OrderDetailPage() {
                 Mark as received
               </Button>
             )}
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                try {
-                  const newId = await reorder(order.id);
-                  notifySuccess(`Order #${newId} placed!`);
-                  navigate(`/orders/${newId}`);
-                } catch (err) {
-                  notifyError(err.message);
-                }
-              }}
-            >
-              Reorder
-            </Button>
+            {isCustomer && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  try {
+                    const newId = await reorder(order.id);
+                    notifySuccess(`Order #${newId} placed!`);
+                    navigate(`/orders/${newId}`);
+                  } catch (err) {
+                    notifyError(err.message);
+                  }
+                }}
+              >
+                Reorder
+              </Button>
+            )}
           </div>
         </Card>
 

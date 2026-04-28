@@ -22,28 +22,21 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // ── API HELPER ───────────────────────────────────────────────────
 // A wrapper around fetch() so we don't repeat the same code everywhere.
-// Automatically attaches the JWT token from localStorage.
+// credentials: 'include' tells the browser to send the httpOnly cookie
+// automatically — the JWT never touches JavaScript code.
 //
 // Usage:
 //   const data = await apiCall('GET', '/restaurants');
 //   const data = await apiCall('POST', '/auth/login', { email, password });
 async function apiCall(method, endpoint, body = null) {
-  // Build request headers
   const headers = { 'Content-Type': 'application/json' };
-
-  // Attach JWT token if user is logged in
-  // The backend checks this token to know who is making the request
-  const token = localStorage.getItem('fd_token');
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  // Build fetch options
-  const options = { method, headers };
+  const options = { method, headers, credentials: 'include' };
   if (body) options.body = JSON.stringify(body);
 
-  // Make the request
-  const response = await fetch(`${API_URL}${endpoint}`, options);
+  // Make the request — catch network-level failures (backend not running)
+  const response = await fetch(`${API_URL}${endpoint}`, options).catch(() => {
+    throw new Error('Cannot connect to the server. Make sure the backend is running.');
+  });
   const data = await response.json();
 
   // If server returned an error status (400, 401, 403, 404, 500...)
@@ -118,33 +111,39 @@ export function StoreProvider({ children }) {
   // ════════════════════════════════════════════════════════════
 
   // Sign In → calls POST /api/auth/login
-  // Returns the user object so the page knows where to redirect
+  // Backend sets an httpOnly cookie — we only store non-sensitive user info locally
   const signIn = useCallback(async (email, password) => {
-    // apiCall throws an error if login fails (wrong password etc.)
     const data = await apiCall('POST', '/auth/login', { email, password });
-
-    // Save token and user info to localStorage for persistence
-    localStorage.setItem('fd_token', data.token);
     localStorage.setItem('fd_user', JSON.stringify(data.user));
     setSession(data.user);
-
     return data.user; // caller uses this to decide where to redirect
   }, []);
 
   // Sign Up → calls POST /api/auth/register
   const signUp = useCallback(async (email, password, role) => {
     const data = await apiCall('POST', '/auth/register', { email, password, role });
-    localStorage.setItem('fd_token', data.token);
     localStorage.setItem('fd_user', JSON.stringify(data.user));
     setSession(data.user);
     return data.user;
   }, []);
 
-  // Sign Out → clear everything from memory and localStorage
-  const signOut = useCallback(() => {
-    localStorage.removeItem('fd_token');
+  // Sign Out → tell backend to clear the httpOnly cookie, then clear local state
+  const signOut = useCallback(async () => {
+    await apiCall('POST', '/auth/logout').catch(() => {});
     localStorage.removeItem('fd_user');
     setSession(null);
+  }, []);
+
+  // ── SESSION VALIDATION ON STARTUP ───────────────────────────
+  // On page load, verify the cookie is still valid. If the backend
+  // returns 401 (cookie missing or expired), clear the stale session.
+  useEffect(() => {
+    if (!session) return;
+    apiCall('GET', '/auth/me').catch(() => {
+      localStorage.removeItem('fd_user');
+      setSession(null);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ════════════════════════════════════════════════════════════
