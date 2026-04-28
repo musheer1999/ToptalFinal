@@ -1,0 +1,17 @@
+# Dependencies - we don't upload these (they're installed via npm install)
+node_modules/
+
+# Environment variables - NEVER upload secrets!
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
