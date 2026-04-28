@@ -12,6 +12,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
+import { useCartContext } from '../context/CartContext';
 import { fmtMoney, QtyStepper, Button } from './ui';
 
 // ── LOGO ──────────────────────────────────────────────────────
@@ -30,14 +31,14 @@ function Logo() {
       </svg>
       {/* Text hidden below 380px */}
       <span style={{ fontSize: 15, fontWeight: 700, color: '#1A202C', letterSpacing: -0.3, whiteSpace: 'nowrap' }}
-        className="logo-text">ToptalMeals</span>
+        className="logo-text">Mealroute</span>
     </div>
   );
 }
 
 // ── CUSTOMER NAVIGATION ────────────────────────────────────────
 function CustomerNavLinks({ onOpenCart }) {
-  const { cartCount } = useStore();
+  const { cartCount } = useCartContext();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -194,9 +195,9 @@ function UserMenu() {
 
 // ── CART DRAWER ────────────────────────────────────────────────
 function CartDrawer({ onClose }) {
-  const { cart, getRestaurant, getMeal, updateCartQty, removeFromCart, cartSubtotal, cartCount } = useStore();
+  const { cart, updateCartQty, removeFromCart, cartSubtotal, cartCount } = useCartContext();
   const navigate = useNavigate();
-  const restaurant = cart.restaurantId ? getRestaurant(cart.restaurantId) : null;
+  const restaurantName = cart.restaurantName || 'Current restaurant';
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 300 }}>
@@ -209,7 +210,7 @@ function CartDrawer({ onClose }) {
         <div style={{ padding: '16px 20px', borderBottom: '1px solid #EDF0F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 17, fontWeight: 700 }}>Your cart</div>
-            {restaurant && <div style={{ fontSize: 12, color: '#718096', marginTop: 2 }}>from {restaurant.name}</div>}
+            {cart.restaurantId && <div style={{ fontSize: 12, color: '#718096', marginTop: 2 }}>from {restaurantName}</div>}
           </div>
           <button onClick={onClose} style={{ border: 'none', background: '#F7F8FC', borderRadius: 999, width: 32, height: 32, fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
         </div>
@@ -223,14 +224,12 @@ function CartDrawer({ onClose }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {cart.items.map(item => {
-                const meal = getMeal(item.mealId);
-                if (!meal) return null;
                 return (
                   <div key={item.mealId} style={{ display: 'flex', gap: 12, padding: 12, border: '1px solid #EDF0F5', borderRadius: 12 }}>
                     <div style={{ width: 56, height: 56, borderRadius: 10, background: '#FFF1EC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🍽️</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{meal.name}</div>
-                      <div style={{ fontSize: 13, color: '#FF6B35', fontWeight: 600, marginTop: 2 }}>{fmtMoney(parseFloat(meal.price))}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{item.mealName}</div>
+                      <div style={{ fontSize: 13, color: '#FF6B35', fontWeight: 600, marginTop: 2 }}>{fmtMoney(parseFloat(item.price))}</div>
                       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <QtyStepper value={item.qty} onChange={q => updateCartQty(item.mealId, q)} min={0} />
                         <button onClick={() => removeFromCart(item.mealId)} style={{ border: 'none', background: 'transparent', color: '#E53E3E', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Remove</button>

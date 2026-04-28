@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../context/StoreContext';
-import { Button, EmptyState, Input } from '../../components/ui';
-import { PageShell, PageHeader } from './_shared';
+import { Button, EmptyState, Input } from '../../../components/ui';
+import { PageShell, PageHeader } from '../_shared';
+import useBrowseRestaurants from './useBrowseRestaurants';
+import useBrowseRestaurantsQuery from './useBrowseRestaurantsQuery';
 
 const CUISINE_IMAGES = {
   Italian:  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80',
@@ -47,9 +48,12 @@ function RestaurantCard({ restaurant: r }) {
 }
 
 export function BrowseRestaurantsPage() {
-  const { restaurants } = useStore();
   const [search, setSearch]   = useState('');
   const [cuisine, setCuisine] = useState('All');
+
+  const { restaurants, onAfterGetRestaurants } = useBrowseRestaurants();
+
+  const { loading, loadRestaurants } = useBrowseRestaurantsQuery({ onAfterGetRestaurants });
 
   const cuisines = useMemo(() =>
     ['All', ...new Set(restaurants.map(r => r.cuisine).filter(Boolean))],
@@ -61,6 +65,14 @@ export function BrowseRestaurantsPage() {
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       (r.cuisine || '').toLowerCase().includes(search.toLowerCase()))
   );
+
+  useEffect(() => {
+    loadRestaurants();
+  }, [loadRestaurants]);
+
+  if (loading) {
+    return <PageShell><div style={{ textAlign: 'center', padding: 80, color: '#718096' }}>Loading restaurants...</div></PageShell>;
+  }
 
   return (
     <PageShell>

@@ -22,21 +22,28 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // ── API HELPER ───────────────────────────────────────────────────
 // A wrapper around fetch() so we don't repeat the same code everywhere.
-// credentials: 'include' tells the browser to send the httpOnly cookie
-// automatically — we never touch the token in JavaScript code.
+// Automatically attaches the JWT token from localStorage.
 //
 // Usage:
 //   const data = await apiCall('GET', '/restaurants');
 //   const data = await apiCall('POST', '/auth/login', { email, password });
 async function apiCall(method, endpoint, body = null) {
+  // Build request headers
   const headers = { 'Content-Type': 'application/json' };
-  const options = { method, headers, credentials: 'include' };
+
+  // Attach JWT token if user is logged in
+  // The backend checks this token to know who is making the request
+  const token = localStorage.getItem('fd_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Build fetch options
+  const options = { method, headers };
   if (body) options.body = JSON.stringify(body);
 
-  // Make the request — catch network-level failures (backend not running)
-  const response = await fetch(`${API_URL}${endpoint}`, options).catch(() => {
-    throw new Error('Cannot connect to the server. Make sure the backend is running.');
-  });
+  // Make the request
+  const response = await fetch(`${API_URL}${endpoint}`, options);
   const data = await response.json();
 
   // If server returned an error status (400, 401, 403, 404, 500...)
@@ -71,9 +78,6 @@ export function StoreProvider({ children }) {
     }
   });
 
-  // ── BACKEND STATUS ───────────────────────────────────────────
-  const [backendOffline, setBackendOffline] = useState(false);
-
   // ── DATA STATE ───────────────────────────────────────────────
   // These hold data fetched from the backend
   const [restaurants, setRestaurants] = useState([]);
@@ -82,41 +86,8 @@ export function StoreProvider({ children }) {
   const [users, setUsers]             = useState([]);   // customers (owner view)
   const [orders, setOrders]           = useState([]);   // orders list
 
-  // ── CART STATE ───────────────────────────────────────────────
-  // Cart is stored in React state (not the backend)
-  // Format: { restaurantId: '5', items: [{ mealId: '3', qty: 2 }] }
-  const [cart, setCart] = useState({ restaurantId: null, items: [] });
-
   // ── TOAST (NOTIFICATION) STATE ───────────────────────────────
   const [toasts, setToasts] = useState([]);
-
-  // ── SESSION VALIDATION ON STARTUP ───────────────────────────
-  // When the app loads, verify the session is still valid by hitting
-  // /api/auth/me. If the httpOnly cookie is missing or expired the
-  // backend returns 401 and we clear the stale localStorage session.
-  useEffect(() => {
-    if (!session) return;
-    apiCall('GET', '/auth/me').catch(() => {
-      localStorage.removeItem('fd_user');
-      setSession(null);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ── BACKEND HEALTH CHECK ─────────────────────────────────────
-  // Polls /api/health every 30s. No auth required on that endpoint.
-  // Polling means the banner auto-clears once the backend comes up,
-  // even if the frontend was already open when the backend was down.
-  useEffect(() => {
-    const check = () => {
-      fetch(`${API_URL}/health`)
-        .then(() => setBackendOffline(false))
-        .catch(() => setBackendOffline(true));
-    };
-    check();
-    const interval = setInterval(check, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   // ── LOAD RESTAURANTS WHEN USER LOGS IN ───────────────────────
   // useEffect runs after render. Here: fetch restaurants when session changes.
@@ -146,28 +117,33 @@ export function StoreProvider({ children }) {
   // ════════════════════════════════════════════════════════════
 
   // Sign In → calls POST /api/auth/login
-  // The backend sets an httpOnly cookie — we only store non-sensitive user info
+  // Returns the user object so the page knows where to redirect
   const signIn = useCallback(async (email, password) => {
+    // apiCall throws an error if login fails (wrong password etc.)
     const data = await apiCall('POST', '/auth/login', { email, password });
+
+    // Save token and user info to localStorage for persistence
+    localStorage.setItem('fd_token', data.token);
     localStorage.setItem('fd_user', JSON.stringify(data.user));
     setSession(data.user);
+
     return data.user; // caller uses this to decide where to redirect
   }, []);
 
   // Sign Up → calls POST /api/auth/register
   const signUp = useCallback(async (email, password, role) => {
     const data = await apiCall('POST', '/auth/register', { email, password, role });
+    localStorage.setItem('fd_token', data.token);
     localStorage.setItem('fd_user', JSON.stringify(data.user));
     setSession(data.user);
     return data.user;
   }, []);
 
-  // Sign Out → tell backend to clear the httpOnly cookie, then clear local state
-  const signOut = useCallback(async () => {
-    await apiCall('POST', '/auth/logout').catch(() => {});
+  // Sign Out → clear everything from memory and localStorage
+  const signOut = useCallback(() => {
+    localStorage.removeItem('fd_token');
     localStorage.removeItem('fd_user');
     setSession(null);
-    setCart({ restaurantId: null, items: [] });
   }, []);
 
   // ════════════════════════════════════════════════════════════
@@ -326,27 +302,6 @@ export function StoreProvider({ children }) {
     return data.order; // includes .items and .status_history arrays
   }, []);
 
-  // Customer places an order → POST /api/orders
-  const placeOrder = useCallback(async ({ couponCode, tip }) => {
-    if (!cart.restaurantId || cart.items.length === 0) return null;
-
-    const body = {
-      restaurant_id: parseInt(cart.restaurantId),
-      // Map cart items to the format the backend expects
-      items: cart.items.map(i => ({
-        meal_id: parseInt(i.mealId),
-        quantity: i.qty,
-      })),
-      coupon_code: couponCode || null,
-      tip: parseFloat(tip) || 0,
-    };
-
-    const data = await apiCall('POST', '/orders', body);
-    // Clear the cart after successful order placement
-    setCart({ restaurantId: null, items: [] });
-    return data.order.id; // return the new order ID for redirect
-  }, [cart]);
-
   // Update order status (used by both customer and owner)
   // → PATCH /api/orders/:orderId/status
   const advanceOrderStatus = useCallback(async (orderId, newStatus) => {
@@ -396,72 +351,6 @@ export function StoreProvider({ children }) {
     ));
   }, []);
 
-  // ════════════════════════════════════════════════════════════
-  // CART ACTIONS (local only — cart is NOT saved to backend)
-  // ════════════════════════════════════════════════════════════
-
-  // Total number of items in cart (shows on cart button badge)
-  const cartCount = useMemo(() =>
-    cart.items.reduce((sum, i) => sum + i.qty, 0),
-  [cart]);
-
-  // Total price of all items in cart (before discount and tip)
-  const cartSubtotal = useMemo(() =>
-    cart.items.reduce((sum, i) => {
-      const meal = meals.find(m => String(m.id) === String(i.mealId));
-      return sum + (meal ? parseFloat(meal.price) * i.qty : 0);
-    }, 0),
-  [cart, meals]);
-
-  // Add a meal to the cart
-  const addToCart = useCallback((mealId, qty) => {
-    // Find the meal to get its restaurant ID
-    const meal = meals.find(m => String(m.id) === String(mealId));
-    if (!meal) return;
-
-    const rid = String(meal.restaurant_id);
-
-    setCart(prev => {
-      // If cart already has items from a DIFFERENT restaurant,
-      // clear the cart and start fresh with this new restaurant
-      if (prev.restaurantId && prev.restaurantId !== rid) {
-        return { restaurantId: rid, items: [{ mealId: String(mealId), qty }] };
-      }
-      // If this meal is already in cart, just increase quantity
-      const existing = prev.items.find(i => i.mealId === String(mealId));
-      if (existing) {
-        return {
-          restaurantId: rid,
-          items: prev.items.map(i =>
-            i.mealId === String(mealId) ? { ...i, qty: i.qty + qty } : i
-          ),
-        };
-      }
-      // New meal — add to cart
-      return {
-        restaurantId: rid,
-        items: [...prev.items, { mealId: String(mealId), qty }],
-      };
-    });
-  }, [meals]);
-
-  // Change quantity of an item in cart (qty=0 removes it)
-  const updateCartQty = useCallback((mealId, qty) => {
-    setCart(prev => {
-      if (qty <= 0) {
-        const next = prev.items.filter(i => i.mealId !== String(mealId));
-        return { restaurantId: next.length ? prev.restaurantId : null, items: next };
-      }
-      return {
-        ...prev,
-        items: prev.items.map(i => i.mealId === String(mealId) ? { ...i, qty } : i),
-      };
-    });
-  }, []);
-
-  const removeFromCart = useCallback((mealId) => updateCartQty(mealId, 0), [updateCartQty]);
-  const clearCart      = useCallback(() => setCart({ restaurantId: null, items: [] }), []);
-
   // ── OWNER'S RESTAURANT ───────────────────────────────────────
   // Since each owner has ONE restaurant, we find it by their user ID.
   // This is used on owner pages to know which restaurant they manage.
@@ -474,9 +363,6 @@ export function StoreProvider({ children }) {
   // ── EVERYTHING EXPORTED TO THE APP ──────────────────────────
   // Any component can access these by calling useStore()
   const value = {
-    // ── Backend status ────────────────────────────────────────
-    backendOffline,
-
     // ── Auth ──────────────────────────────────────────────────
     session, signIn, signUp, signOut,
 
@@ -495,14 +381,10 @@ export function StoreProvider({ children }) {
 
     // ── Orders ────────────────────────────────────────────────
     orders, loadMyOrders, loadRestaurantOrders, loadOrderById,
-    placeOrder, advanceOrderStatus, cancelOrder, markReceived, reorder,
+    advanceOrderStatus, cancelOrder, markReceived, reorder,
 
     // ── Users (owner) ─────────────────────────────────────────
     users, loadUsers, blockUser, unblockUser,
-
-    // ── Cart ──────────────────────────────────────────────────
-    cart, cartCount, cartSubtotal,
-    addToCart, updateCartQty, removeFromCart, clearCart,
 
     // ── Toasts ────────────────────────────────────────────────
     toasts, showToast,

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../context/StoreContext';
-import { Button, EmptyState, StatusBadge, fmtMoney, fmtDate } from '../../components/ui';
-import { PageShell, PageHeader } from './_shared';
+import { Button, EmptyState, StatusBadge, fmtMoney, fmtDate } from '../../../components/ui';
+import { PageShell, PageHeader } from '../_shared';
+import useCustomerOrders from './useCustomerOrders';
+import useCustomerOrdersQuery from './useCustomerOrdersQuery';
 
 function OrderCard({ order, restaurantName, onCancel, onMarkReceived, onReorder, onDetails }) {
   return (
@@ -40,14 +41,33 @@ function OrderCard({ order, restaurantName, onCancel, onMarkReceived, onReorder,
 }
 
 export function CustomerOrdersPage() {
-  const { loadMyOrders, orders, getRestaurant, cancelOrder, markReceived, reorder, showToast } = useStore();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const {
+    orders,
+    restaurantsById,
+    loading,
+    setLoading,
+    onAfterLoadOrders,
+    onAfterLoadRestaurants,
+    notifySuccess,
+    notifyError,
+  } = useCustomerOrders();
+  const {
+    loadRestaurants,
+    loadMyOrders,
+    cancelOrder,
+    markReceived,
+    reorder,
+  } = useCustomerOrdersQuery({ onAfterLoadOrders });
 
   useEffect(() => {
-    loadMyOrders().catch(() => {}).finally(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    Promise.all([
+      loadRestaurants(onAfterLoadRestaurants),
+      loadMyOrders(),
+    ])
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [loadMyOrders, loadRestaurants, onAfterLoadRestaurants, setLoading]);
 
   if (loading) return <PageShell><div style={{ textAlign: 'center', padding: 80, color: '#718096' }}>Loading orders...</div></PageShell>;
 
@@ -55,37 +75,49 @@ export function CustomerOrdersPage() {
     <PageShell>
       <PageHeader title="Orders history" subtitle={`${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`} />
       {orders.length === 0 ? (
-        <EmptyState icon="📦" title="No orders yet" body="Browse restaurants to place your first order."
+        <EmptyState
+          icon="📦"
+          title="No orders yet"
+          body="Browse restaurants to place your first order."
           action={<Button onClick={() => navigate('/browse-restaurants')}>Browse restaurants</Button>}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {orders.map(order => {
-            const restaurant = getRestaurant(order.restaurant_id);
-            return (
-              <OrderCard
-                key={order.id}
-                order={order}
-                restaurantName={order.restaurant_name || restaurant?.name || '—'}
-                onCancel={async () => {
-                  try { await cancelOrder(order.id); showToast({ kind: 'error', title: `Order #${order.id} canceled` }); loadMyOrders(); }
-                  catch (err) { showToast({ kind: 'error', title: err.message }); }
-                }}
-                onMarkReceived={async () => {
-                  try { await markReceived(order.id); showToast({ kind: 'success', title: 'Marked received!' }); loadMyOrders(); }
-                  catch (err) { showToast({ kind: 'error', title: err.message }); }
-                }}
-                onReorder={async () => {
-                  try {
-                    const newId = await reorder(order.id);
-                    showToast({ kind: 'success', title: `Order #${newId} placed!` });
-                    navigate(`/orders/${newId}`);
-                  } catch (err) { showToast({ kind: 'error', title: err.message }); }
-                }}
-                onDetails={() => navigate(`/orders/${order.id}`)}
-              />
-            );
-          })}
+          {orders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              restaurantName={order.restaurant_name || restaurantsById[String(order.restaurant_id)]?.name || '—'}
+              onCancel={async () => {
+                try {
+                  await cancelOrder(order.id);
+                  notifySuccess(`Order #${order.id} canceled`);
+                  await loadMyOrders();
+                } catch (err) {
+                  notifyError(err.message);
+                }
+              }}
+              onMarkReceived={async () => {
+                try {
+                  await markReceived(order.id);
+                  notifySuccess('Marked received!');
+                  await loadMyOrders();
+                } catch (err) {
+                  notifyError(err.message);
+                }
+              }}
+              onReorder={async () => {
+                try {
+                  const newId = await reorder(order.id);
+                  notifySuccess(`Order #${newId} placed!`);
+                  navigate(`/orders/${newId}`);
+                } catch (err) {
+                  notifyError(err.message);
+                }
+              }}
+              onDetails={() => navigate(`/orders/${order.id}`)}
+            />
+          ))}
         </div>
       )}
     </PageShell>

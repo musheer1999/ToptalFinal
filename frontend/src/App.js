@@ -15,6 +15,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import the global state provider
 import { StoreProvider, useStore } from './context/StoreContext';
+import { CartProvider } from './context/CartContext';
 
 // Import toast notification container
 import { ToastContainer } from './components/ui';
@@ -23,11 +24,13 @@ import { ToastContainer } from './components/ui';
 import { LandingPage } from './pages/auth/LandingPage';
 import { SignInPage }  from './pages/auth/SignInPage';
 import { SignUpPage }  from './pages/auth/SignUpPage';
-import { BrowseRestaurantsPage } from './pages/customer/BrowseRestaurantsPage';
-import { BrowseMealsPage }       from './pages/customer/BrowseMealsPage';
-import { CartPage }              from './pages/customer/CartPage';
-import { CustomerOrdersPage }    from './pages/customer/CustomerOrdersPage';
-import { OrderDetailPage }       from './pages/customer/OrderDetailPage';
+import {
+  BrowseMealsPage,
+  BrowseRestaurantsPage,
+  CartPage,
+  CustomerOrdersPage,
+  OrderDetailPage,
+} from './pages/customer';
 import { OwnerOrdersPage }       from './pages/owner/OwnerOrdersPage';
 import { ManageRestaurantsPage } from './pages/owner/ManageRestaurantsPage';
 import { ManageMealsPage }       from './pages/owner/ManageMealsPage';
@@ -57,27 +60,10 @@ function OwnerRoute({ children }) {
 // ── APP CONTENT ─────────────────────────────────────────────────
 // Separated so it can access the StoreContext (useStore)
 function AppContent() {
-  const { toasts, backendOffline } = useStore();
+  const { toasts } = useStore();
 
   return (
     <>
-      {/* Backend offline banner */}
-      {backendOffline && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#FFF3CD', borderBottom: '1px solid #FFEAA7',
-          padding: '10px 20px', textAlign: 'center', fontSize: 14, color: '#856404',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          <span>⚠️</span>
-          <strong>Backend is not running.</strong>
-          <span>Start the backend server  to use the app.</span>
-        </div>
-      )}
-
-      {/* Push content down when banner is visible */}
-      {backendOffline && <div style={{ height: 41 }} />}
-
       {/* All routes */}
       <Routes>
         {/* ── PUBLIC ROUTES ── */}
@@ -153,7 +139,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <StoreProvider>
-        <AppContent />
+        <CartProvider>
+          <AppContent />
+        </CartProvider>
       </StoreProvider>
     </BrowserRouter>
   );

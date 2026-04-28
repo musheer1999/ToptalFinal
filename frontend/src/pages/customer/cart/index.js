@@ -1,46 +1,82 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../context/StoreContext';
-import { Button, Card, EmptyState, Field, Input, QtyStepper, fmtMoney } from '../../components/ui';
-import { PageShell, PageHeader, SummaryRow } from './_shared';
+import { Button, Card, EmptyState, Field, Input, QtyStepper, fmtMoney } from '../../../components/ui';
+import { PageShell, PageHeader, SummaryRow } from '../_shared';
+import useCart from './useCart';
+import useCartQuery from './useCartQuery';
 
 export function CartPage() {
-  const { cart, getRestaurant, getMeal, updateCartQty, removeFromCart, cartSubtotal, validateCoupon, placeOrder, showToast } = useStore();
   const navigate = useNavigate();
-  const [couponCode, setCouponCode]   = useState('');
-  const [couponError, setCouponError] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [tip, setTip]       = useState(0);
-  const [placing, setPlacing] = useState(false);
+  const {
+    cart,
+    restaurant,
+    mealsById,
+    couponCode,
+    setCouponCode,
+    couponError,
+    setCouponError,
+    appliedCoupon,
+    setAppliedCoupon,
+    tip,
+    setTip,
+    placing,
+    setPlacing,
+    cartSubtotal,
+    discount,
+    total,
+    updateCartQty,
+    removeFromCart,
+    onAfterLoadCartContext,
+    onAfterCouponValidation,
+    onCouponError,
+    onOrderPlaced,
+  } = useCart();
+  const { loadCartContext, validateCoupon, placeOrder } = useCartQuery({
+    onAfterLoadCartContext,
+    onAfterCouponValidation,
+  });
 
-  const restaurant = cart.restaurantId ? getRestaurant(cart.restaurantId) : null;
-  const discount   = appliedCoupon ? cartSubtotal * (appliedCoupon.discount_percentage / 100) : 0;
-  const total      = cartSubtotal - discount + Number(tip);
+  useEffect(() => {
+    loadCartContext(cart.restaurantId).catch(() => {});
+  }, [cart.restaurantId, loadCartContext]);
 
   const applyCoupon = async () => {
-    if (!couponCode.trim()) { setCouponError('Enter a coupon code'); return; }
+    if (!couponCode.trim()) {
+      setCouponError('Enter a coupon code');
+      return;
+    }
     try {
-      const coupon = await validateCoupon(cart.restaurantId, couponCode.trim());
-      setAppliedCoupon(coupon); setCouponError('');
-      showToast({ kind: 'success', title: 'Coupon applied!', body: `${coupon.discount_percentage}% off.` });
-    } catch (err) { setCouponError(err.message); setAppliedCoupon(null); }
+      await validateCoupon(cart.restaurantId, couponCode.trim());
+    } catch (err) {
+      onCouponError(err.message);
+    }
   };
 
   const handlePlaceOrder = async () => {
     setPlacing(true);
     try {
-      const orderId = await placeOrder({ couponCode: appliedCoupon?.code, tip });
-      if (orderId) { showToast({ kind: 'success', title: 'Order placed!' }); navigate(`/orders/${orderId}`); }
-    } catch (err) { showToast({ kind: 'error', title: err.message }); }
-    finally { setPlacing(false); }
+      const orderId = await placeOrder({ cart, couponCode: appliedCoupon?.code, tip });
+      if (orderId) {
+        const nextOrderId = onOrderPlaced(orderId);
+        navigate(`/orders/${nextOrderId}`);
+      }
+    } catch (err) {
+      onCouponError(err.message);
+    } finally {
+      setPlacing(false);
+    }
   };
 
   if (!cart.items || cart.items.length === 0) {
     return (
       <PageShell>
         <PageHeader title="Your cart" />
-        <EmptyState icon="🛒" title="Your cart is empty" body="Browse restaurants and add some meals."
-          action={<Button onClick={() => navigate('/browse-restaurants')}>Browse restaurants</Button>} />
+        <EmptyState
+          icon="🛒"
+          title="Your cart is empty"
+          body="Browse restaurants and add some meals."
+          action={<Button onClick={() => navigate('/browse-restaurants')}>Browse restaurants</Button>}
+        />
       </PageShell>
     );
   }
@@ -50,10 +86,9 @@ export function CartPage() {
       <PageHeader title="Your cart" subtitle={restaurant ? `From ${restaurant.name}` : ''} back={{ to: `/browse-meals/${cart.restaurantId}`, label: 'Back to menu' }} />
       <style>{`@media(min-width:720px){.cart-layout{display:grid!important;grid-template-columns:1fr 380px;gap:16px;align-items:start}}`}</style>
       <div className="cart-layout" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {cart.items.map(item => {
-            const meal = getMeal(item.mealId);
+          {cart.items.map((item) => {
+            const meal = mealsById.get(String(item.mealId));
             if (!meal) return null;
             return (
               <Card key={item.mealId}>
@@ -66,7 +101,7 @@ export function CartPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <QtyStepper value={item.qty} onChange={q => updateCartQty(item.mealId, q)} min={0} />
+                    <QtyStepper value={item.qty} onChange={(qty) => updateCartQty(item.mealId, qty)} min={0} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontWeight: 700, fontSize: 15 }}>{fmtMoney(parseFloat(meal.price) * item.qty)}</span>
                       <button onClick={() => removeFromCart(item.mealId)} style={{ border: 'none', background: 'transparent', color: '#E53E3E', cursor: 'pointer', padding: 4, fontSize: 18 }}>🗑️</button>
@@ -82,7 +117,7 @@ export function CartPage() {
           <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700 }}>Checkout summary</h3>
           <Field label="Coupon code" error={couponError}>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Input value={couponCode} onChange={v => { setCouponCode(v); setCouponError(''); }} placeholder="e.g. WELCOME10" error={couponError} />
+              <Input value={couponCode} onChange={(value) => { setCouponCode(value); setCouponError(''); }} placeholder="e.g. WELCOME10" error={couponError} />
               <Button variant="secondary" onClick={applyCoupon}>Apply</Button>
             </div>
           </Field>
@@ -95,14 +130,14 @@ export function CartPage() {
           <div style={{ marginTop: 14 }}>
             <Field label="Tip">
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {[0, 2, 4, 6, 10].map(t => (
-                  <button key={t} onClick={() => setTip(t)} style={{
+                {[0, 2, 4, 6, 10].map((tipValue) => (
+                  <button key={tipValue} onClick={() => setTip(tipValue)} style={{
                     padding: '7px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'inherit', border: '1px solid',
-                    borderColor: tip === t ? '#FF6B35' : '#E2E8F0',
-                    background: tip === t ? '#FFF1EC' : 'white',
-                    color: tip === t ? '#C2410C' : '#4A5568',
-                  }}>₹{t}</button>
+                    borderColor: tip === tipValue ? '#FF6B35' : '#E2E8F0',
+                    background: tip === tipValue ? '#FFF1EC' : 'white',
+                    color: tip === tipValue ? '#C2410C' : '#4A5568',
+                  }}>₹{tipValue}</button>
                 ))}
               </div>
             </Field>
