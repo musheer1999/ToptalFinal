@@ -19,13 +19,19 @@ function useCustomerOrders() {
     setRestaurantsById(byId);
   }, []);
 
-  const notifySuccess = useCallback((title, body) => {
-    showToast({ kind: 'success', title, body });
-  }, [showToast]);
+  const notifySuccess = useCallback(
+    (title, body) => {
+      showToast({ kind: 'success', title, body });
+    },
+    [showToast]
+  );
 
-  const notifyError = useCallback((title) => {
-    showToast({ kind: 'error', title });
-  }, [showToast]);
+  const notifyError = useCallback(
+    (title) => {
+      showToast({ kind: 'error', title });
+    },
+    [showToast]
+  );
 
   return {
     orders,

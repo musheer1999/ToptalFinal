@@ -10,12 +10,12 @@ export function CartProvider({ children }) {
 
   const cartCount = useMemo(
     () => cart.items.reduce((sum, item) => sum + item.qty, 0),
-    [cart.items],
+    [cart.items]
   );
 
   const cartSubtotal = useMemo(
-    () => cart.items.reduce((sum, item) => sum + (parseFloat(item.price) * item.qty), 0),
-    [cart.items],
+    () => cart.items.reduce((sum, item) => sum + parseFloat(item.price) * item.qty, 0),
+    [cart.items]
   );
 
   const clearCart = useCallback(() => {
@@ -42,9 +42,9 @@ export function CartProvider({ children }) {
           ...prev,
           restaurantId,
           restaurantName: activeRestaurantName,
-          items: prev.items.map((item) => (
+          items: prev.items.map((item) =>
             item.mealId === mealId ? { ...item, qty: item.qty + 1 } : item
-          )),
+          ),
         };
       }
 
@@ -52,7 +52,10 @@ export function CartProvider({ children }) {
         ...prev,
         restaurantId,
         restaurantName: activeRestaurantName,
-        items: [...prev.items, { mealId, mealName: meal.name, price: parseFloat(meal.price), qty: 1 }],
+        items: [
+          ...prev.items,
+          { mealId, mealName: meal.name, price: parseFloat(meal.price), qty: 1 },
+        ],
       };
     });
   }, []);
@@ -67,16 +70,17 @@ export function CartProvider({ children }) {
 
       return {
         ...prev,
-        items: prev.items.map((item) => (
-          item.mealId === String(mealId) ? { ...item, qty } : item
-        )),
+        items: prev.items.map((item) => (item.mealId === String(mealId) ? { ...item, qty } : item)),
       };
     });
   }, []);
 
-  const removeFromCart = useCallback((mealId) => {
-    updateCartQty(mealId, 0);
-  }, [updateCartQty]);
+  const removeFromCart = useCallback(
+    (mealId) => {
+      updateCartQty(mealId, 0);
+    },
+    [updateCartQty]
+  );
 
   useEffect(() => {
     if (!session) clearCart();
@@ -93,11 +97,7 @@ export function CartProvider({ children }) {
     addMealToCart,
   };
 
-  return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 
 export function useCartContext() {

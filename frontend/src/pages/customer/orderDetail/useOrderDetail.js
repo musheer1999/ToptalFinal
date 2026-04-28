@@ -22,13 +22,19 @@ function useOrderDetail() {
     setOrder((prev) => (prev ? { ...prev, status } : prev));
   }, []);
 
-  const notifySuccess = useCallback((title) => {
-    showToast({ kind: 'success', title });
-  }, [showToast]);
+  const notifySuccess = useCallback(
+    (title) => {
+      showToast({ kind: 'success', title });
+    },
+    [showToast]
+  );
 
-  const notifyError = useCallback((title) => {
-    showToast({ kind: 'error', title });
-  }, [showToast]);
+  const notifyError = useCallback(
+    (title) => {
+      showToast({ kind: 'error', title });
+    },
+    [showToast]
+  );
 
   return {
     order,

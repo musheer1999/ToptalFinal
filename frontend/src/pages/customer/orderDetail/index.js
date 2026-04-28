@@ -18,12 +18,9 @@ export function OrderDetailPage() {
     notifySuccess,
     notifyError,
   } = useOrderDetail();
-  const {
-    loadOrderById,
-    cancelOrder,
-    markReceived,
-    reorder,
-  } = useOrderDetailQuery({ onAfterLoadOrder });
+  const { loadOrderById, cancelOrder, markReceived, reorder } = useOrderDetailQuery({
+    onAfterLoadOrder,
+  });
 
   useEffect(() => {
     setLoading(true);
@@ -32,8 +29,18 @@ export function OrderDetailPage() {
       .finally(() => setLoading(false));
   }, [loadOrderById, onAfterLoadOrder, orderId, setLoading]);
 
-  if (loading) return <PageShell><div style={{ textAlign: 'center', padding: 80, color: '#718096' }}>Loading order...</div></PageShell>;
-  if (!order) return <PageShell><EmptyState icon="❌" title="Order not found" /></PageShell>;
+  if (loading)
+    return (
+      <PageShell>
+        <div style={{ textAlign: 'center', padding: 80, color: '#718096' }}>Loading order...</div>
+      </PageShell>
+    );
+  if (!order)
+    return (
+      <PageShell>
+        <EmptyState icon="❌" title="Order not found" />
+      </PageShell>
+    );
 
   return (
     <PageShell>
@@ -44,58 +51,95 @@ export function OrderDetailPage() {
         right={<StatusBadge status={order.status} size="lg" />}
       />
       <style>{`@media(min-width:720px){.order-detail-layout{display:grid!important;grid-template-columns:1fr 360px;gap:16px;align-items:start}}`}</style>
-      <div className="order-detail-layout" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div
+        className="order-detail-layout"
+        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+      >
         <Card>
           <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700 }}>Items</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {(order.items || []).map((item) => (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '8px 0', borderBottom: '1px solid #F7F8FC' }}>
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  padding: '8px 0',
+                  borderBottom: '1px solid #F7F8FC',
+                }}
+              >
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{item.meal_name}</div>
-                  <div style={{ fontSize: 12, color: '#718096' }}>{item.quantity} × {fmtMoney(parseFloat(item.price))}</div>
+                  <div style={{ fontSize: 12, color: '#718096' }}>
+                    {item.quantity} × {fmtMoney(parseFloat(item.price))}
+                  </div>
                 </div>
-                <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtMoney(item.quantity * parseFloat(item.price))}</div>
+                <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {fmtMoney(item.quantity * parseFloat(item.price))}
+                </div>
               </div>
             ))}
           </div>
           <div style={{ height: 1, background: '#EDF0F5', margin: '14px 0' }} />
           <SummaryRow label="Subtotal" value={fmtMoney(prices.subtotal)} />
-          {prices.discount > 0 && <SummaryRow label={`Coupon (${order.coupon_code || ''})`} value={`−${fmtMoney(prices.discount)}`} valueColor="#38A169" />}
+          {prices.discount > 0 && (
+            <SummaryRow
+              label={`Coupon (${order.coupon_code || ''})`}
+              value={`−${fmtMoney(prices.discount)}`}
+              valueColor="#38A169"
+            />
+          )}
           {prices.tip > 0 && <SummaryRow label="Tip" value={fmtMoney(prices.tip)} />}
           <div style={{ height: 1, background: '#EDF0F5', margin: '10px 0' }} />
           <SummaryRow label="Total" value={fmtMoney(prices.total)} large />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
             {(order.status === 'Placed' || order.status === 'Processing') && (
-              <Button variant="danger" onClick={async () => {
-                try {
-                  await cancelOrder(order.id);
-                  setOrderStatus('Canceled');
-                  notifySuccess('Order canceled');
-                } catch (err) {
-                  notifyError(err.message);
-                }
-              }}>Cancel order</Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  try {
+                    await cancelOrder(order.id);
+                    setOrderStatus('Canceled');
+                    notifySuccess('Order canceled');
+                  } catch (err) {
+                    notifyError(err.message);
+                  }
+                }}
+              >
+                Cancel order
+              </Button>
             )}
             {order.status === 'Delivered' && (
-              <Button variant="success" onClick={async () => {
+              <Button
+                variant="success"
+                onClick={async () => {
+                  try {
+                    await markReceived(order.id);
+                    setOrderStatus('Received');
+                    notifySuccess('Marked as received!');
+                  } catch (err) {
+                    notifyError(err.message);
+                  }
+                }}
+              >
+                Mark as received
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              onClick={async () => {
                 try {
-                  await markReceived(order.id);
-                  setOrderStatus('Received');
-                  notifySuccess('Marked as received!');
+                  const newId = await reorder(order.id);
+                  notifySuccess(`Order #${newId} placed!`);
+                  navigate(`/orders/${newId}`);
                 } catch (err) {
                   notifyError(err.message);
                 }
-              }}>Mark as received</Button>
-            )}
-            <Button variant="secondary" onClick={async () => {
-              try {
-                const newId = await reorder(order.id);
-                notifySuccess(`Order #${newId} placed!`);
-                navigate(`/orders/${newId}`);
-              } catch (err) {
-                notifyError(err.message);
-              }
-            }}>Reorder</Button>
+              }}
+            >
+              Reorder
+            </Button>
           </div>
         </Card>
 

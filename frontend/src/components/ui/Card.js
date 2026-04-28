@@ -5,7 +5,9 @@ export function Card({ children, style, padded = true, onClick }) {
     <div
       onClick={onClick}
       style={{
-        background: 'white', border: '1px solid #EDF0F5', borderRadius: 14,
+        background: 'white',
+        border: '1px solid #EDF0F5',
+        borderRadius: 14,
         boxShadow: '0 1px 3px rgba(15,23,42,0.06)',
         padding: padded ? 20 : 0,
         transition: 'transform 0.15s, box-shadow 0.15s',

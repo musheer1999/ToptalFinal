@@ -13,11 +13,14 @@ function useCart() {
   const [placing, setPlacing] = useState(false);
 
   const mealsById = useMemo(
-    () => new Map((cart.items || []).map((item) => [
-      String(item.mealId),
-      { name: item.mealName, price: item.price },
-    ])),
-    [cart.items],
+    () =>
+      new Map(
+        (cart.items || []).map((item) => [
+          String(item.mealId),
+          { name: item.mealName, price: item.price },
+        ])
+      ),
+    [cart.items]
   );
 
   const discount = appliedCoupon ? cartSubtotal * (appliedCoupon.discount_percentage / 100) : 0;
@@ -27,22 +30,32 @@ function useCart() {
     setRestaurant(loadedRestaurant);
   }, []);
 
-  const onAfterCouponValidation = useCallback((coupon) => {
-    setAppliedCoupon(coupon);
-    setCouponError('');
-    showToast({ kind: 'success', title: 'Coupon applied!', body: `${coupon.discount_percentage}% off.` });
-  }, [showToast]);
+  const onAfterCouponValidation = useCallback(
+    (coupon) => {
+      setAppliedCoupon(coupon);
+      setCouponError('');
+      showToast({
+        kind: 'success',
+        title: 'Coupon applied!',
+        body: `${coupon.discount_percentage}% off.`,
+      });
+    },
+    [showToast]
+  );
 
   const onCouponError = useCallback((message) => {
     setCouponError(message);
     setAppliedCoupon(null);
   }, []);
 
-  const onOrderPlaced = useCallback((orderId) => {
-    clearCart();
-    showToast({ kind: 'success', title: 'Order placed!' });
-    return orderId;
-  }, [clearCart, showToast]);
+  const onOrderPlaced = useCallback(
+    (orderId) => {
+      clearCart();
+      showToast({ kind: 'success', title: 'Order placed!' });
+      return orderId;
+    },
+    [clearCart, showToast]
+  );
 
   return {
     tip,

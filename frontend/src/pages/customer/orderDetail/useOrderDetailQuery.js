@@ -2,10 +2,13 @@ import { useCallback } from 'react';
 import apiCall from '../../../utils/apiCall';
 
 function useOrderDetailQuery({ onAfterLoadOrder }) {
-  const loadOrderById = useCallback(async (orderId) => {
-    const data = await apiCall('GET', `/orders/${orderId}`);
-    onAfterLoadOrder(data.order || null);
-  }, [onAfterLoadOrder]);
+  const loadOrderById = useCallback(
+    async (orderId) => {
+      const data = await apiCall('GET', `/orders/${orderId}`);
+      onAfterLoadOrder(data.order || null);
+    },
+    [onAfterLoadOrder]
+  );
 
   const cancelOrder = useCallback(async (orderId) => {
     await apiCall('PATCH', `/orders/${orderId}/status`, { status: 'Canceled' });

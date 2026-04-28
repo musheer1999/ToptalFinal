@@ -12,7 +12,9 @@ function useManageUsersQuery() {
   }, []);
 
   const unblockUser = useCallback(async (userId, restaurantId) => {
-    await apiCall('DELETE', `/users/${userId}/block`, { restaurant_id: parseInt(restaurantId, 10) });
+    await apiCall('DELETE', `/users/${userId}/block`, {
+      restaurant_id: parseInt(restaurantId, 10),
+    });
   }, []);
 
   return {

@@ -17,17 +17,19 @@ function useBrowseMeals() {
 
   const types = useMemo(
     () => ['All', ...new Set(meals.map((meal) => meal.type).filter(Boolean))],
-    [meals],
+    [meals]
   );
 
-  const filteredMeals = typeFilter === 'All'
-    ? meals
-    : meals.filter((meal) => meal.type === typeFilter);
+  const filteredMeals =
+    typeFilter === 'All' ? meals : meals.filter((meal) => meal.type === typeFilter);
 
-  const addMealToCart = useCallback((meal) => {
-    addToCart(meal, restaurant?.name || '');
-    showToast({ kind: 'success', title: `Added ${meal.name}`, body: '1 × added to cart.' });
-  }, [addToCart, restaurant?.name, showToast]);
+  const addMealToCart = useCallback(
+    (meal) => {
+      addToCart(meal, restaurant?.name || '');
+      showToast({ kind: 'success', title: `Added ${meal.name}`, body: '1 × added to cart.' });
+    },
+    [addToCart, restaurant?.name, showToast]
+  );
 
   return {
     cart,

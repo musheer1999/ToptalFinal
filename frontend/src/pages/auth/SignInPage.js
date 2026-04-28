@@ -8,20 +8,28 @@ export function SignInPage() {
   const navigate = useNavigate();
   const { signIn, session } = useStore();
 
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (session) {
-    return <Navigate to={session.role === 'owner' ? '/owner/orders' : '/browse-restaurants'} replace />;
+    return (
+      <Navigate to={session.role === 'owner' ? '/owner/orders' : '/browse-restaurants'} replace />
+    );
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!email.trim()) { setError('Please enter your email'); return; }
-    if (!password)     { setError('Please enter your password'); return; }
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
     setLoading(true);
     try {
       const user = await signIn(email.trim().toLowerCase(), password);
@@ -43,7 +51,15 @@ export function SignInPage() {
           <Input type="password" value={password} onChange={setPassword} placeholder="Password" />
         </Field>
         {error && (
-          <div style={{ fontSize: 13, color: '#E53E3E', background: '#FFF5F5', padding: '10px 12px', borderRadius: 8 }}>
+          <div
+            style={{
+              fontSize: 13,
+              color: '#E53E3E',
+              background: '#FFF5F5',
+              padding: '10px 12px',
+              borderRadius: 8,
+            }}
+          >
             {error}
           </div>
         )}
@@ -53,10 +69,19 @@ export function SignInPage() {
       </form>
       <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#718096' }}>
         Don't have an account?{' '}
-        <button onClick={() => navigate('/sign-up')} style={{
-          background: 'none', border: 'none', color: '#FF6B35',
-          fontWeight: 600, cursor: 'pointer', padding: 0, fontFamily: 'inherit', fontSize: 13,
-        }}>
+        <button
+          onClick={() => navigate('/sign-up')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#FF6B35',
+            fontWeight: 600,
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: 'inherit',
+            fontSize: 13,
+          }}
+        >
           Sign up
         </button>
       </p>

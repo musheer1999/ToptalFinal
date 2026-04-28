@@ -9,12 +9,8 @@ export function Field({ label, error, hint, children }) {
         </div>
       )}
       {children}
-      {hint && !error && (
-        <div style={{ fontSize: 12, color: '#718096', marginTop: 4 }}>{hint}</div>
-      )}
-      {error && (
-        <div style={{ fontSize: 12, color: '#E53E3E', marginTop: 4 }}>{error}</div>
-      )}
+      {hint && !error && <div style={{ fontSize: 12, color: '#718096', marginTop: 4 }}>{hint}</div>}
+      {error && <div style={{ fontSize: 12, color: '#E53E3E', marginTop: 4 }}>{error}</div>}
     </label>
   );
 }

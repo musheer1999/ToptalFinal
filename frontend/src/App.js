@@ -22,8 +22,8 @@ import { ToastContainer } from './components/ui';
 
 // Import all pages
 import { LandingPage } from './pages/auth/LandingPage';
-import { SignInPage }  from './pages/auth/SignInPage';
-import { SignUpPage }  from './pages/auth/SignUpPage';
+import { SignInPage } from './pages/auth/SignInPage';
+import { SignUpPage } from './pages/auth/SignUpPage';
 import {
   BrowseMealsPage,
   BrowseRestaurantsPage,
@@ -74,39 +74,87 @@ function AppContent() {
         <Route path="/sign-up" element={<SignUpPage />} />
 
         {/* ── CUSTOMER ROUTES ── */}
-        <Route path="/browse-restaurants" element={
-          <CustomerRoute><BrowseRestaurantsPage /></CustomerRoute>
-        } />
-        <Route path="/browse-meals/:restaurantId" element={
-          <CustomerRoute><BrowseMealsPage /></CustomerRoute>
-        } />
-        <Route path="/cart" element={
-          <CustomerRoute><CartPage /></CustomerRoute>
-        } />
-        <Route path="/orders/customer" element={
-          <CustomerRoute><CustomerOrdersPage /></CustomerRoute>
-        } />
-        <Route path="/orders/:orderId" element={
-          // Both customer AND owner can view order details
-          <OrderDetailPage />
-        } />
+        <Route
+          path="/browse-restaurants"
+          element={
+            <CustomerRoute>
+              <BrowseRestaurantsPage />
+            </CustomerRoute>
+          }
+        />
+        <Route
+          path="/browse-meals/:restaurantId"
+          element={
+            <CustomerRoute>
+              <BrowseMealsPage />
+            </CustomerRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <CustomerRoute>
+              <CartPage />
+            </CustomerRoute>
+          }
+        />
+        <Route
+          path="/orders/customer"
+          element={
+            <CustomerRoute>
+              <CustomerOrdersPage />
+            </CustomerRoute>
+          }
+        />
+        <Route
+          path="/orders/:orderId"
+          element={
+            // Both customer AND owner can view order details
+            <OrderDetailPage />
+          }
+        />
 
         {/* ── OWNER ROUTES ── */}
-        <Route path="/owner/orders" element={
-          <OwnerRoute><OwnerOrdersPage /></OwnerRoute>
-        } />
-        <Route path="/owner/restaurants" element={
-          <OwnerRoute><ManageRestaurantsPage /></OwnerRoute>
-        } />
-        <Route path="/owner/meals" element={
-          <OwnerRoute><ManageMealsPage /></OwnerRoute>
-        } />
-        <Route path="/owner/coupons" element={
-          <OwnerRoute><ManageCouponsPage /></OwnerRoute>
-        } />
-        <Route path="/owner/users" element={
-          <OwnerRoute><ManageUsersPage /></OwnerRoute>
-        } />
+        <Route
+          path="/owner/orders"
+          element={
+            <OwnerRoute>
+              <OwnerOrdersPage />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/restaurants"
+          element={
+            <OwnerRoute>
+              <ManageRestaurantsPage />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/meals"
+          element={
+            <OwnerRoute>
+              <ManageMealsPage />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/coupons"
+          element={
+            <OwnerRoute>
+              <ManageCouponsPage />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/users"
+          element={
+            <OwnerRoute>
+              <ManageUsersPage />
+            </OwnerRoute>
+          }
+        />
 
         {/* ── CATCH ALL ── */}
         {/* Any unknown URL goes back to home */}

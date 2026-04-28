@@ -6,12 +6,20 @@ export const fmtDate = (iso) => {
   if (diffMin < 1) return 'just now';
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 };
 
 export const fmtDateFull = (iso) => {
   return new Date(iso).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
   });
 };

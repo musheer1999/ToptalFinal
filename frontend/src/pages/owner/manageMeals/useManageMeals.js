@@ -11,9 +11,12 @@ function useManageMeals() {
   const [editingMeal, setEditingMeal] = useState(null);
   const [deletingMeal, setDeletingMeal] = useState(null);
 
-  const setFormField = useCallback((field) => (value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const setFormField = useCallback(
+    (field) => (value) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
   const onMealsLoaded = useCallback((loadedMeals) => {
     setMeals(loadedMeals);
@@ -31,13 +34,19 @@ function useManageMeals() {
     setMeals((prev) => prev.filter((meal) => meal.id !== mealId));
   }, []);
 
-  const notifySuccess = useCallback((title, body) => {
-    showToast({ kind: 'success', title, body });
-  }, [showToast]);
+  const notifySuccess = useCallback(
+    (title, body) => {
+      showToast({ kind: 'success', title, body });
+    },
+    [showToast]
+  );
 
-  const notifyError = useCallback((title) => {
-    showToast({ kind: 'error', title });
-  }, [showToast]);
+  const notifyError = useCallback(
+    (title) => {
+      showToast({ kind: 'error', title });
+    },
+    [showToast]
+  );
 
   return {
     form,
